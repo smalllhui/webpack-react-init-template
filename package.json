@@ -75,6 +75,7 @@
     "commitizen": "^4.3.0",
     "commitlint": "^17.7.1",
     "commitlint-config-cz": "^0.13.3",
+    "compression-webpack-plugin": "^10.0.0",
     "craco-less": "^3.0.1",
     "craco-plugin-stylus-resources-loader": "^0.0.2",
     "cz-conventional-changelog": "^3.3.0",
@@ -83,6 +84,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.33.2",
+    "happypack": "^5.0.1",
     "husky": "^8.0.3",
     "less": "^4.2.0",
     "less-loader": "^11.1.3",
@@ -94,6 +96,7 @@
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^34.0.0",
     "stylelint-less": "^2.0.0",
-    "stylelint-order": "^6.0.3"
+    "stylelint-order": "^6.0.3",
+    "webpack-bundle-analyzer": "^4.9.1"
   }
 }
