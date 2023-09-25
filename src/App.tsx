@@ -1,11 +1,10 @@
 import React from 'react'
-import styles from '@/app.module.less'
-
+import StoreTest from '@/pages/StoreTest'
 /**
  * @Description:App页面
  */
 const App: React.FC = () => {
-  return <div className={styles.container}>App</div>
+  return <StoreTest />
 }
 
 export default App
