@@ -1,0 +1,12 @@
+{
+  "语言": {
+    "简体中文": "Chinese",
+    "英语": "English",
+    "日语": "Japanese"
+  },
+  "用户操作": {
+    "个人中心": "Personal center",
+    "个人设置": "Personal Settings",
+    "退出登录": "Log out"
+  }
+}

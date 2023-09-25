@@ -7,7 +7,8 @@ import { Provider } from 'react-redux'
 import store, { persistor } from '@/store'
 // PersistGate的作用是向下分发persistStore对象；
 import { PersistGate } from 'redux-persist/lib/integration/react'
-
+// 导入国际化
+import '@/i18n'
 // 样式
 import './reset.css'
 // 入口页面
