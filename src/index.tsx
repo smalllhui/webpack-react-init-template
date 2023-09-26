@@ -9,8 +9,6 @@ import store, { persistor } from '@/store'
 import { PersistGate } from 'redux-persist/lib/integration/react'
 // 导入国际化
 import '@/i18n'
-// 样式
-import './reset.css'
 // 入口页面
 import App from '@/App'
 

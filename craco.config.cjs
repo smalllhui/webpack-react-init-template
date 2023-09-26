@@ -14,6 +14,7 @@ const os = require('os')
 const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
 // 打包后的文件体积分析
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const { getPlugin, pluginByName, whenProd } = require('@craco/craco')
 // 具体配置见官网：https://craco.js.org/docs/
 module.exports = {
   // 插件配置
@@ -46,8 +47,43 @@ module.exports = {
       }
 
       if (env !== 'production') return webpackConfig
-
       // 生产环境 才会下面配置
+
+      whenProd(() => {
+        // 只有生产环境才配置
+        webpackConfig.externals = {
+          // 线上替换cdn key:value key为库的名字 value为umd模块导出到global对象的key名
+          react: 'React',
+          'react-dom': 'ReactDOM',
+          axios: 'axios',
+        }
+      })
+
+      // 根据插件名获取插件 返回是否找到和匹配的插件
+      const { isFound: isHtmlWebpackPluginFound, match: htmlWebpackPlugin } = getPlugin(
+        webpackConfig,
+        pluginByName('HtmlWebpackPlugin'),
+      )
+
+      if (isHtmlWebpackPluginFound) {
+        // cdn url要按照库的相互依赖优先级填写 被依赖的写前面优先加载
+        htmlWebpackPlugin.userOptions.cdn = whenProd(
+          () => ({
+            // 配置现成的cdn 资源数组 现在是公共为了测试、实际开发的时候 用公司自己花钱买的cdn服务器
+            js: [
+              'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
+            ],
+            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
+          }),
+          // 本地环境设为空 防止页面遍历报错
+          {
+            js: [],
+            css: [],
+          },
+        )
+      }
 
       // 删除log
       const TerserPlugin = webpackConfig.optimization.minimizer.find(i => i.constructor.name === 'TerserPlugin')
@@ -82,7 +118,7 @@ module.exports = {
 
         // 打包体积分析插件
         new BundleAnalyzerPlugin({
-          openAnalyzer: false, // 在默认浏览器中是否自动打开报告，默认 true
+          openAnalyzer: true, // 在默认浏览器中是否自动打开报告，默认 true
         }),
       )
       return webpackConfig

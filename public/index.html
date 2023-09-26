@@ -7,11 +7,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Web site created using create-react-app" />
   <title>React App</title>
+  <!-- 加载第三发包的 CDN CSS链接 -->
+  <% htmlWebpackPlugin.options.cdn.css.forEach(cdnURL=> { %>
+    <link rel="stylesheet" href="<%= cdnURL %>">
+    </link>
+    <% }) %>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
+  <!-- 加载第三发包的 CDN JS链接 -->
+  <% htmlWebpackPlugin.options.cdn.js.forEach(cdnURL=> { %>
+    <script src="<%= cdnURL %>"></script>
+    <% }) %>
 </body>
 
 </html>
