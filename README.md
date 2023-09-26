@@ -1,5 +1,7 @@
 # React项目初始化环境搭建(webpack)
 
+代码在Github仓库：https://github.com/smalllhui/webpack-react-init-template
+
 ## 准备工作
 
 ### 1、vscode安装插件
@@ -230,12 +232,6 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:prettier/recommended', // 加上这一行，解决eslint prettier 冲突问题
   ],
-  settings: {
-    react: {
-      version: 'detect',
-    },
-  },
-  globals: {},
   overrides: [
     {
       files: ['.eslintrc.{js,cjs}'],
@@ -250,6 +246,12 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: ['@typescript-eslint', 'react'],
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
+  globals: {},
   /*
    * "off" 或 0    ==>  关闭规则
    * "warn" 或 1   ==>  打开的规则作为警告（不影响代码执行）
@@ -262,8 +264,8 @@ module.exports = {
     semi: [2, 'never'], // 强制是否使用分号
     'no-undef': 'error', // 不能有未定义的变量
     'no-var': 'error', // 要求使用 let 或 const 而不是 var
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off', // 是否允许使用debugger
-    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off', //  是否允许使用console
+    'no-debugger': 'off', // 是否允许使用debugger
+    'no-console': 'off', //  是否允许使用console
 
     // ts 详细规则：https://typescript-eslint.io/rules/
     /** @typescript */
@@ -1084,8 +1086,7 @@ const CompressionPlugin = require('compression-webpack-plugin');//引入gzip压�
 
 // 使用gzip压缩超过1M的js和css文件
 new CompressionPlugin({
-    // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件，建议使用下方的写法
-    filename: '[path].gz[query]', //  使得多个.gz文件合并成一个文件，这种方式压缩后的文件少，建议使用
+    // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件
     algorithm: 'gzip', // 官方默认压缩算法也是gzip
     test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
     threshold: 1024, //以字节为单位压缩超过此大小的文件，使用默认值10240吧
@@ -1216,59 +1217,62 @@ module.exports = {
       // 约定：使用 @ 表示 src 文件所在路径
       '@': path.resolve(__dirname, 'src'),
     },
-    plugins: {
-      add: [
-        // 分析打包后的文件大小
-        // new BundleAnalyzerPlugin({
-        //   openAnalyzer: false, // 在默认浏览器中是否自动打开报告，默认 true
-        // }),
-      ],
-      // 设置工程的路径
-      configure: (webpackConfig, { env, paths }) => {
-        webpackConfig.output.clean = true // 自动将上次打包目录资源清空
-        // 更改build打包文件名称为dist
-        paths.appBuild = path.resolve(__dirname, 'dist')
-        webpackConfig.output.path = path.resolve(__dirname, 'dist')
 
-        if (env !== 'production') return webpackConfig
+    configure: (webpackConfig, { env, paths }) => {
+      // 修改打包输出文件目录
+      paths.appBuild = path.resolve(__dirname, 'dist')
+      webpackConfig.output = {
+        ...webpackConfig.output,
+        clean: true, // 自动将上次打包目录资源清空
+        path: path.resolve(__dirname, 'dist'),
+        publicPath: '/', //资源名
+      }
 
-        // 生产环境 才会下面配置
+      if (env !== 'production') return webpackConfig
 
-        // webpack添加插件
-        webpackConfig.plugins.push(
-          // 配置完以后，暂时还不能使用，还需要后端做一下配置，这里后端以nginx为例
-          // 使用gzip压缩超过1M的js和css文件
-          new CompressionPlugin({
-            // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件，建议使用下方的写法
-            filename: '[path].gz[query]', //  使得多个.gz文件合并成一个文件，这种方式压缩后的文件少，建议使用
-            algorithm: 'gzip', // 官方默认压缩算法也是gzip
-            test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
-            threshold: 1024, //以字节为单位压缩超过此大小的文件，使用默认值10240吧
-            minRatio: 0.8, // 最小压缩比率，官方默认0.8
-            //是否删除原有静态资源文件，即只保留压缩后的.gz文件，建议这个置为false，还保留源文件。以防：
-            // 假如出现访问.gz文件访问不到的时候，还可以访问源文件双重保障
-            deleteOriginalAssets: false,
-          }),
+      // 生产环境 才会下面配置
 
-          // 使用多线程打包
-          new HappyPack({
-            // id标识happyPack处理那一类文件
-            id: 'babel',
-            loaders: ['babel-loader'],
-            // 共享进程池
-            threadPool: happyThreadPool,
-          }),
+      // 删除log
+      const TerserPlugin = webpackConfig.optimization.minimizer.find(i => i.constructor.name === 'TerserPlugin')
+      if (TerserPlugin) {
+        // TerserPlugin.options.minimizer.options.compress['drop_console'] = true // 删除所有console语句
+        TerserPlugin.options.minimizer.options.compress['drop_debugger'] = true
+        TerserPlugin.options.minimizer.options.compress['pure_funcs'] = ['console.log'] //删除打印语句
+      }
 
-          // 打包体积分析插件
-          new BundleAnalyzerPlugin({
-            openAnalyzer: true, // 在默认浏览器中是否自动打开报告，默认 true
-          }),
-        )
-        return webpackConfig
-      },
+      // webpack添加插件
+      webpackConfig.plugins.push(
+        // 配置完以后，暂时还不能使用，还需要后端做一下配置，这里后端以nginx为例
+        // 使用gzip压缩超过1M的js和css文件
+        new CompressionPlugin({
+          // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件
+          algorithm: 'gzip', // 官方默认压缩算法也是gzip
+          test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
+          threshold: 10240, //以字节为单位压缩超过此大小的文件，小于10KB就不进行压缩
+          minRatio: 0.8, // 最小压缩比率，官方默认0.8
+          //是否删除原有静态资源文件，即只保留压缩后的.gz文件，建议这个置为false，还保留源文件。以防：假如出现访问.gz文件访问不到的时候，还可以访问源文件双重保障
+          deleteOriginalAssets: false,
+        }),
+
+        // 使用多线程打包
+        new HappyPack({
+          // id标识happyPack处理那一类文件
+          id: 'babel',
+          loaders: ['babel-loader'],
+          // 共享进程池
+          threadPool: happyThreadPool,
+        }),
+
+        // 打包体积分析插件
+        new BundleAnalyzerPlugin({
+          openAnalyzer: false, // 在默认浏览器中是否自动打开报告，默认 true
+        }),
+      )
+      return webpackConfig
     },
   },
 }
+
 ```
 
 ## 5、网络请求

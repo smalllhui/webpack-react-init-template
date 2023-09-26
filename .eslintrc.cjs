@@ -42,8 +42,8 @@ module.exports = {
     semi: [2, 'never'], // 强制是否使用分号
     'no-undef': 'error', // 不能有未定义的变量
     'no-var': 'error', // 要求使用 let 或 const 而不是 var
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off', // 是否允许使用debugger
-    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off', //  是否允许使用console
+    'no-debugger': 'off', // 是否允许使用debugger
+    'no-console': 'off', //  是否允许使用console
 
     // ts 详细规则：https://typescript-eslint.io/rules/
     /** @typescript */
