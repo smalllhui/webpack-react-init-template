@@ -1,8 +1,28 @@
-# React项目初始化环境搭建(webpack)
+# create-react-app创建项目之基于craco的配置
 
 代码在Github仓库：https://github.com/smalllhui/webpack-react-init-template
 
-## 准备工作
+## 背景介绍
+
+1、react-scripts 是 create-react-app 的一个核心包，一些脚本和工具的默认配置都集成在里面，而 yarn eject 命令执行后会将封装在 create-react-app 中的配置全部反编译到当前项目，这样用户就能完全取得 webpack 文件的控制权。所以，eject 命令存在的意义就是更改 webpack 配置。
+
+2、npm run eject 会复制所有依赖文件和相应的依赖（webpack、babel等）到你的项目，是不可逆操作。
+
+3、配置过于繁琐，配置文件代码过多,不易快速寻找
+
+![eject.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7edf83b9e6844a08b9a6889712493ce7~tplv-k3u1fbpfcp-watermark.image?)
+
+## craco介绍
+
+
+- **C**reate **R**eact **A**pp **C**configuration **O**verride是**一个用于 create-react-app**的简单易懂的配置层。
+- 通过在应用程序的根目录添加单个配置（例如）文件并自定义 eslint、babel、webpack配置等等，无需使用“弹出”即可获得 create-react-app**和自定义的所有好处。**
+
+- 您所要做的就是使用[create-react-app](https://github.com/facebook/create-react-app/)创建您的应用程序并自定义配置文件。
+
+  **须知：**`craco适用于使用 create-react-app 创建项目,不想 eject 项目但想对项目中 wepback 进行自定义配置的开发者。`
+
+## 开发环境的安装
 
 ### 1、vscode安装插件
 
@@ -217,7 +237,17 @@ module.exports = {
 }
 ```
 
-#### 5、.eslintrc.cjs文件配置如下
+#### 5、.eslintignore
+
+```tex
+# 忽略文件或文件夹
+dist/
+build/
+.husky/
+config/
+```
+
+#### 6、.eslintrc.cjs文件配置如下
 
 ```javascript
 module.exports = {
@@ -1176,7 +1206,81 @@ new BundleAnalyzerPlugin(options?: object)
 | **`excludeAssets`**     | `{null|pattern|pattern[]}` 其中 pattern 可以是 `{String|RegExp|function}` | 默认值：null。 用于匹配将从报告中排除的资源名称的模式。 如果 pattern 是一个字符串，它将通过 new RegExp(str) 转换为 RegExp。 如果 pattern 是一个函数，它应该具有以下签名 (assetName: string) => boolean 并且应该返回 true 以排除匹配的资源。 如果提供了多个模式，资源应至少匹配其中一个以被排除。 |
 | **`logLevel`**          | One of: `info`, `warn`, `error`, `silent`                    | 默认值：info。 用于控制插件输出多少细节                      |
 
-### 4、上述配置如下
+### 4、优化CDN配置
+
+通过 craco 来修改 webpack 配置，从而实现 CDN 优化
+`public/index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Web site created using create-react-app" />
+  <title>React App</title>
+  <!-- 加载第三发包的 CDN CSS链接 -->
+  <% htmlWebpackPlugin.options.cdn.css.forEach(cdnURL=> { %>
+    <link rel="stylesheet" href="<%= cdnURL %>">
+    </link>
+    <% }) %>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <!-- 加载第三发包的 CDN JS链接 -->
+  <% htmlWebpackPlugin.options.cdn.js.forEach(cdnURL=> { %>
+    <script src="<%= cdnURL %>"></script>
+    <% }) %>
+</body>
+
+</html>
+```
+
+`配置部分代码`
+
+```js
+whenProd(() => {
+    // 只有生产环境才配置
+    webpackConfig.externals = {
+        // 线上替换cdn key:value key为库的名字 value为umd模块导出到global对象的key名
+        react: 'React',
+        'react-dom': 'ReactDOM',
+        axios: 'axios',
+    }
+})
+
+// 根据插件名获取插件 返回是否找到和匹配的插件
+const { isFound: isHtmlWebpackPluginFound, match: htmlWebpackPlugin } = getPlugin(
+    webpackConfig,
+    pluginByName('HtmlWebpackPlugin'),
+)
+
+if (isHtmlWebpackPluginFound) {
+    // cdn url要按照库的相互依赖优先级填写 被依赖的写前面优先加载
+    htmlWebpackPlugin.userOptions.cdn = whenProd(
+        () => ({
+            // 配置现成的cdn 资源数组 现在是公共为了测试、实际开发的时候 用公司自己花钱买的cdn服务器
+            js: [
+                'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
+            ],
+            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
+        }),
+        // 本地环境设为空 防止页面遍历报错
+        {
+            js: [],
+            css: [],
+        },
+    )
+}
+```
+
+### 5、上述配置如下
 
 craco.config.cjs
 
@@ -1197,6 +1301,7 @@ const os = require('os')
 const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
 // 打包后的文件体积分析
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const { getPlugin, pluginByName, whenProd } = require('@craco/craco')
 // 具体配置见官网：https://craco.js.org/docs/
 module.exports = {
   // 插件配置
@@ -1218,7 +1323,7 @@ module.exports = {
       '@': path.resolve(__dirname, 'src'),
     },
 
-    configure: (webpackConfig, { env, paths }) => {
+    configure: (webpackConfig, { paths }) => {
       // 修改打包输出文件目录
       paths.appBuild = path.resolve(__dirname, 'dist')
       webpackConfig.output = {
@@ -1228,51 +1333,87 @@ module.exports = {
         publicPath: '/', //资源名
       }
 
-      if (env !== 'production') return webpackConfig
-
       // 生产环境 才会下面配置
 
-      // 删除log
-      const TerserPlugin = webpackConfig.optimization.minimizer.find(i => i.constructor.name === 'TerserPlugin')
-      if (TerserPlugin) {
-        // TerserPlugin.options.minimizer.options.compress['drop_console'] = true // 删除所有console语句
-        TerserPlugin.options.minimizer.options.compress['drop_debugger'] = true
-        TerserPlugin.options.minimizer.options.compress['pure_funcs'] = ['console.log'] //删除打印语句
+      whenProd(() => {
+        // 删除log
+        const TerserPlugin = webpackConfig.optimization.minimizer.find(i => i.constructor.name === 'TerserPlugin')
+        if (TerserPlugin) {
+          // TerserPlugin.options.minimizer.options.compress['drop_console'] = true // 删除所有console语句
+          TerserPlugin.options.minimizer.options.compress['drop_debugger'] = true
+          TerserPlugin.options.minimizer.options.compress['pure_funcs'] = ['console.log'] //删除打印语句
+        }
+
+        // webpack添加插件
+        webpackConfig.plugins.push(
+          // 配置完以后，暂时还不能使用，还需要后端做一下配置，这里后端以nginx为例
+          // 使用gzip压缩超过1M的js和css文件
+          new CompressionPlugin({
+            // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件
+            algorithm: 'gzip', // 官方默认压缩算法也是gzip
+            test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
+            threshold: 10240, //以字节为单位压缩超过此大小的文件，小于10KB就不进行压缩
+            minRatio: 0.8, // 最小压缩比率，官方默认0.8
+            //是否删除原有静态资源文件，即只保留压缩后的.gz文件，建议这个置为false，还保留源文件。以防：假如出现访问.gz文件访问不到的时候，还可以访问源文件双重保障
+            deleteOriginalAssets: false,
+          }),
+
+          // 使用多线程打包
+          new HappyPack({
+            // id标识happyPack处理那一类文件
+            id: 'babel',
+            loaders: ['babel-loader'],
+            // 共享进程池
+            threadPool: happyThreadPool,
+          }),
+
+          // 打包体积分析插件
+          new BundleAnalyzerPlugin({
+            openAnalyzer: true, // 在默认浏览器中是否自动打开报告，默认 true
+          }),
+        )
+      })
+
+      whenProd(() => {
+        // 只有生产环境才配置
+        webpackConfig.externals = {
+          // 线上替换cdn key:value key为库的名字 value为umd模块导出到global对象的key名
+          react: 'React',
+          'react-dom': 'ReactDOM',
+          axios: 'axios',
+        }
+      })
+
+      // 根据插件名获取插件 返回是否找到和匹配的插件
+      const { isFound: isHtmlWebpackPluginFound, match: htmlWebpackPlugin } = getPlugin(
+        webpackConfig,
+        pluginByName('HtmlWebpackPlugin'),
+      )
+
+      if (isHtmlWebpackPluginFound) {
+        // cdn url要按照库的相互依赖优先级填写 被依赖的写前面优先加载
+        htmlWebpackPlugin.userOptions.cdn = whenProd(
+          () => ({
+            // 配置现成的cdn 资源数组 现在是公共为了测试、实际开发的时候 用公司自己花钱买的cdn服务器
+            js: [
+              'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
+            ],
+            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
+          }),
+          // 本地环境设为空 防止页面遍历报错
+          {
+            js: [],
+            css: [],
+          },
+        )
       }
 
-      // webpack添加插件
-      webpackConfig.plugins.push(
-        // 配置完以后，暂时还不能使用，还需要后端做一下配置，这里后端以nginx为例
-        // 使用gzip压缩超过1M的js和css文件
-        new CompressionPlugin({
-          // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件
-          algorithm: 'gzip', // 官方默认压缩算法也是gzip
-          test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
-          threshold: 10240, //以字节为单位压缩超过此大小的文件，小于10KB就不进行压缩
-          minRatio: 0.8, // 最小压缩比率，官方默认0.8
-          //是否删除原有静态资源文件，即只保留压缩后的.gz文件，建议这个置为false，还保留源文件。以防：假如出现访问.gz文件访问不到的时候，还可以访问源文件双重保障
-          deleteOriginalAssets: false,
-        }),
-
-        // 使用多线程打包
-        new HappyPack({
-          // id标识happyPack处理那一类文件
-          id: 'babel',
-          loaders: ['babel-loader'],
-          // 共享进程池
-          threadPool: happyThreadPool,
-        }),
-
-        // 打包体积分析插件
-        new BundleAnalyzerPlugin({
-          openAnalyzer: false, // 在默认浏览器中是否自动打开报告，默认 true
-        }),
-      )
       return webpackConfig
     },
   },
 }
-
 ```
 
 ## 5、网络请求
@@ -1290,7 +1431,8 @@ yarn add @types/qs -D
  * @Description: axios二次封装网络请求接口
  */
 import Qs from 'qs'
-import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
+import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
 const baseURL = '/api'
 
@@ -1412,136 +1554,37 @@ service.interceptors.response.use(
 /**
  * @description: Http网络请求返回的数据类型接口
  */
-interface HttpResponse<T> {
+interface IResult<T> {
   code?: number
   data: T
   message?: string
 }
 
-interface HttpMethod {
-  get<T>(url: string, params?: unknown): Promise<HttpResponse<T>>
-  post<T>(url: string, data?: unknown): Promise<HttpResponse<T>>
-  put<T>(url: string, data?: unknown): Promise<HttpResponse<T>>
-  delete<T>(url: string, params?: unknown): Promise<HttpResponse<T>>
-  upload<T>(url: string, files: FormData): Promise<HttpResponse<T>>
-  download(url: string, params?: unknown): void
-}
-
+type Method = 'get' | 'post' | 'put' | 'delete'
 /**
- * @description: 网络请求接口类
+ * axios二次封装
+ * @param url 请求路径
+ * @param method 请求方法
+ * @param data 传递参数
+ * @param config 配置文件
+ * @returns  [Promise<HttpResponse<T>>]
  */
-const HttpRequest: HttpMethod = {
-  post(url, data = {}) {
-    return new Promise((resolve, reject) => {
-      service
-        .post(url, data)
-        .then(res => {
-          resolve(res)
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  },
-  put(url, data = {}) {
-    return new Promise((resolve, reject) => {
-      service
-        .put(url, data)
-        .then(res => {
-          resolve(res)
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  },
-  get(url, params = {}) {
-    return new Promise((resolve, reject) => {
-      service
-        .get(url, {
-          params,
-          paramsSerializer: params => Qs.stringify(params, { indices: false }),
-        })
-        .then(res => {
-          resolve(res)
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  },
-  delete(url, params = {}) {
-    return new Promise((resolve, reject) => {
-      service
-        .delete(url, {
-          params,
-        })
-        .then(res => {
-          resolve(res)
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  },
-  upload(url, files: FormData) {
-    return new Promise((resolve, reject) => {
-      service
-        .post(url, files, {
-          headers: { 'Content-Type': ContentType.multipart },
-        })
-        .then(res => {
-          resolve(res)
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  },
-  download(url, params = {}) {
-    axios
-      .get(`${baseURL}${url}`, {
-        params,
-        responseType: 'blob',
-        paramsSerializer: params => Qs.stringify(params, { indices: false }),
-        headers: {
-          Authorization: 'xxx',
-        },
-      })
-      .then(res => {
-        // 创建一个类文件对象：Blob对象表示一个不可变的、原始数据的类文件对象
-        const blob = new Blob([res.data], {
-          type: 'application/octet-stream',
-        })
-        // 创建新的URL并指向File对象或者Blob对象的地址
-        const blobURL = window.URL.createObjectURL(blob)
-        // 创建a标签，用于跳转至下载链接
-        const tempLink = document.createElement('a')
-        tempLink.style.display = 'none'
-        tempLink.href = blobURL
-        // 设置指示浏览器下载url,
-        const fileName = decodeURI(res.headers['content-disposition'].split(';')[1].split('=')[1])
-        tempLink.setAttribute('download', fileName)
-        // 兼容：某些浏览器不支持HTML5的download属性
-        if (typeof tempLink.download === 'undefined') {
-          tempLink.setAttribute('target', '_blank')
-        }
-        // 挂载a标签
-        document.body.appendChild(tempLink)
-        tempLink.click()
-        // 移除a标签
-        document.body.removeChild(tempLink)
-        // 释放blob URL地址
-        window.URL.revokeObjectURL(blobURL)
-      })
-      .catch(err => {
-        console.log(`文件下载失败${err}`)
-      })
-  },
+const request = <T = any>(url: string, method: Method, data?: unknown, config?: AxiosRequestConfig) => {
+  let newConfig = { ...config }
+  if (method === 'get' || method === 'delete') {
+    newConfig = { ...config, paramsSerializer: data => Qs.stringify(data, { indices: false }) }
+  }
+
+  return service<T, IResult<T>>({
+    url,
+    method,
+    // get,delete请求用params接收，其他请求用data
+    [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete' ? 'params' : 'data']: data,
+    ...newConfig,
+  })
 }
 
-export default HttpRequest
-
+export default request
 ```
 
 ## 6、reduxjs/toolkit安装使用
@@ -2600,213 +2643,6 @@ const onAdd = (index: number) => {
       darft[index].num++
   })
 }
-```
-
-## 10、优化CDN配置
-
-通过 craco 来修改 webpack 配置，从而实现 CDN 优化
-
-`配置部分代码`
-
-```js
-whenProd(() => {
-    // 只有生产环境才配置
-    webpackConfig.externals = {
-        // 线上替换cdn key:value key为库的名字 value为umd模块导出到global对象的key名
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        axios: 'axios',
-    }
-})
-
-// 根据插件名获取插件 返回是否找到和匹配的插件
-const { isFound: isHtmlWebpackPluginFound, match: htmlWebpackPlugin } = getPlugin(
-    webpackConfig,
-    pluginByName('HtmlWebpackPlugin'),
-)
-
-if (isHtmlWebpackPluginFound) {
-    // cdn url要按照库的相互依赖优先级填写 被依赖的写前面优先加载
-    htmlWebpackPlugin.userOptions.cdn = whenProd(
-        () => ({
-            // 配置现成的cdn 资源数组 现在是公共为了测试、实际开发的时候 用公司自己花钱买的cdn服务器
-            js: [
-                'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
-            ],
-            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
-        }),
-        // 本地环境设为空 防止页面遍历报错
-        {
-            js: [],
-            css: [],
-        },
-    )
-}
-```
-
-`craco.config.cjs`完整配置
-
-```js
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path')
-//配置less
-const CracoLessPlugin = require('craco-less')
-//配置全局less
-const cracoPluginStyleResourcesLoader = require('craco-plugin-stylus-resources-loader')
-//引入gzip压缩插件
-const CompressionPlugin = require('compression-webpack-plugin')
-// 多线程打包
-const HappyPack = require('happypack')
-// 系统信息
-const os = require('os')
-// 开辟一个线程池，拿到系统CPU的核数，happypack 将编译工作利用所有线程
-const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
-// 打包后的文件体积分析
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-const { getPlugin, pluginByName, whenProd } = require('@craco/craco')
-// 具体配置见官网：https://craco.js.org/docs/
-module.exports = {
-  // 插件配置
-  plugins: [
-    { plugin: CracoLessPlugin }, // 配置less
-    {
-      plugin: cracoPluginStyleResourcesLoader, //配置全局less
-      options: {
-        patterns: [path.join(__dirname, 'src/assets/styles/less/global.less')],
-        styleType: 'less',
-      },
-    },
-  ],
-  // webpack 配置
-  webpack: {
-    // 配置别名
-    alias: {
-      // 约定：使用 @ 表示 src 文件所在路径
-      '@': path.resolve(__dirname, 'src'),
-    },
-
-    configure: (webpackConfig, { env, paths }) => {
-      // 修改打包输出文件目录
-      paths.appBuild = path.resolve(__dirname, 'dist')
-      webpackConfig.output = {
-        ...webpackConfig.output,
-        clean: true, // 自动将上次打包目录资源清空
-        path: path.resolve(__dirname, 'dist'),
-        publicPath: '/', //资源名
-      }
-
-      if (env !== 'production') return webpackConfig
-      // 生产环境 才会下面配置
-
-      whenProd(() => {
-        // 只有生产环境才配置
-        webpackConfig.externals = {
-          // 线上替换cdn key:value key为库的名字 value为umd模块导出到global对象的key名
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          axios: 'axios',
-        }
-      })
-
-      // 根据插件名获取插件 返回是否找到和匹配的插件
-      const { isFound: isHtmlWebpackPluginFound, match: htmlWebpackPlugin } = getPlugin(
-        webpackConfig,
-        pluginByName('HtmlWebpackPlugin'),
-      )
-
-      if (isHtmlWebpackPluginFound) {
-        // cdn url要按照库的相互依赖优先级填写 被依赖的写前面优先加载
-        htmlWebpackPlugin.userOptions.cdn = whenProd(
-          () => ({
-            // 配置现成的cdn 资源数组 现在是公共为了测试、实际开发的时候 用公司自己花钱买的cdn服务器
-            js: [
-              'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
-              'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
-              'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
-            ],
-            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
-          }),
-          // 本地环境设为空 防止页面遍历报错
-          {
-            js: [],
-            css: [],
-          },
-        )
-      }
-
-      // 删除log
-      const TerserPlugin = webpackConfig.optimization.minimizer.find(i => i.constructor.name === 'TerserPlugin')
-      if (TerserPlugin) {
-        // TerserPlugin.options.minimizer.options.compress['drop_console'] = true // 删除所有console语句
-        TerserPlugin.options.minimizer.options.compress['drop_debugger'] = true
-        TerserPlugin.options.minimizer.options.compress['pure_funcs'] = ['console.log'] //删除打印语句
-      }
-
-      // webpack添加插件
-      webpackConfig.plugins.push(
-        // 配置完以后，暂时还不能使用，还需要后端做一下配置，这里后端以nginx为例
-        // 使用gzip压缩超过1M的js和css文件
-        new CompressionPlugin({
-          // filename: "[path][base].gz", // 这种方式是默认的，多个文件压缩就有多个.gz文件
-          algorithm: 'gzip', // 官方默认压缩算法也是gzip
-          test: /\.(js|css)$/, // 使用正则给匹配到的文件做压缩，这里是给css、js
-          threshold: 10240, //以字节为单位压缩超过此大小的文件，小于10KB就不进行压缩
-          minRatio: 0.8, // 最小压缩比率，官方默认0.8
-          //是否删除原有静态资源文件，即只保留压缩后的.gz文件，建议这个置为false，还保留源文件。以防：假如出现访问.gz文件访问不到的时候，还可以访问源文件双重保障
-          deleteOriginalAssets: false,
-        }),
-
-        // 使用多线程打包
-        new HappyPack({
-          // id标识happyPack处理那一类文件
-          id: 'babel',
-          loaders: ['babel-loader'],
-          // 共享进程池
-          threadPool: happyThreadPool,
-        }),
-
-        // 打包体积分析插件
-        new BundleAnalyzerPlugin({
-          openAnalyzer: true, // 在默认浏览器中是否自动打开报告，默认 true
-        }),
-      )
-      return webpackConfig
-    },
-  },
-}
-```
-
-`public/index.html`
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Web site created using create-react-app" />
-  <title>React App</title>
-  <!-- 加载第三发包的 CDN CSS链接 -->
-  <% htmlWebpackPlugin.options.cdn.css.forEach(cdnURL=> { %>
-    <link rel="stylesheet" href="<%= cdnURL %>">
-    </link>
-    <% }) %>
-</head>
-
-<body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root"></div>
-  <!-- 加载第三发包的 CDN JS链接 -->
-  <% htmlWebpackPlugin.options.cdn.js.forEach(cdnURL=> { %>
-    <script src="<%= cdnURL %>"></script>
-    <% }) %>
-</body>
-
-</html>
 ```
 
 ## Tailwind CSS的使用(扩展)
