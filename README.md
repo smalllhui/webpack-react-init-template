@@ -1050,7 +1050,17 @@ module.exports = {
 }
 ```
 
-### 4、完整的简单配置
+### 4、样式初始化
+
+```bash
+yarn add normalize.css 
+```
+
+```tsx
+import 'normalize.css/normalize.css'
+```
+
+### 5、完整的简单配置
 
 `craco.config.js`
 

@@ -113,7 +113,7 @@ module.exports = {
               'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
               'https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js',
             ],
-            css: ['https://cdn.bootcdn.net/ajax/libs/normalize/8.0.1/normalize.min.css'],
+            css: [],
           }),
           // 本地环境设为空 防止页面遍历报错
           {
