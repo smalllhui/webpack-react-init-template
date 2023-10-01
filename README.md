@@ -1449,6 +1449,36 @@ module.exports = {
   },
 }
 ```
+### 6、React项目部署到Nginx的配置
+
+```
+React h5打包 apk
+	1.不要配置二级目录
+	2.在package.json文件中添加 "homepage": "./"
+	
+React + Nginx配置 (本地serve支持)
+	egg:http://127.0.0.1:8080
+    nginx配置如下
+    
+    location / {
+    	root   html/react/dist; # 打包后的文件所在目录
+    	index  index.html index.htm;
+    	try_files $uri $uri/ /index.html;
+    }
+
+React + 二级目录 + Nginx配置 (本地serve不支持查看)
+	egg:http://127.0.0.1:8080/admin
+	1. BrowserRouter basename={'/admin'}
+	2. webpack publicPath: '/admin'
+	3. 需要在package.json文件中添加 "homepage": "/admin/"
+	4、nginx配置react项目如下
+    
+    location /admin {
+      alias  html/react/dist; # 打包后的文件所在目录
+      index  index.html index.htm;
+      try_files $uri $uri/ /index.html;
+    }
+```
 
 ## 5、网络请求
 
