@@ -1,8 +1,8 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit'
-import logger from 'redux-logger'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
+import logger from 'redux-logger'
 // persistStore 为redux-persist内置的状态管理仓库；persistReducer 为内置的切片管理；
-import { persistStore, persistReducer } from 'redux-persist'
+import { persistReducer, persistStore } from 'redux-persist'
 // import storage from 'redux-persist/lib/storage' // 本地存储
 import storage from 'redux-persist/lib/storage/session' // 会话存储
 

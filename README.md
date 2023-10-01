@@ -247,7 +247,28 @@ build/
 config/
 ```
 
-#### 6、.eslintrc.cjs文件配置如下
+#### 6、配置包导入规则
+
+eslint-plugin-import-helpers: ESLint插件，帮助强制导入语句的可配置顺序
+
+```bash
+yarn add eslint-plugin-simple-import-sort -D 
+```
+
+配置
+
+```tex
+plugins: [xxxxx, 'simple-import-sort'], // 添加'simple-import-sort'到插件中
+
+rules:{
+// 导入规则配置
+'simple-import-sort/imports': 'error',
+'simple-import-sort/exports': 'error',
+// ...
+}
+```
+
+#### 7、.eslintrc.cjs文件配置如下
 
 ```javascript
 module.exports = {
@@ -275,7 +296,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint', 'react'],
+  plugins: ['@typescript-eslint', 'react', 'simple-import-sort'],
   settings: {
     react: {
       version: 'detect',
@@ -288,6 +309,9 @@ module.exports = {
    * "error" 或 2  ==>  规则作为一个错误（代码不能执行，界面报错）
    */
   rules: {
+      // 导入规则配置
+    'simple-import-sort/imports': 'error',
+    'simple-import-sort/exports': 'error',
     // js 详细规则：http://eslint.cn/docs/rules/
     /** @js */
     quotes: [2, 'single'], // 强制使用一致的单引号

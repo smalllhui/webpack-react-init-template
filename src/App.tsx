@@ -1,7 +1,8 @@
 import React, { Fragment } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
-import StoreTest from '@/pages/StoreTest'
+
 import I18nTest from '@/pages/I18nTest'
+import StoreTest from '@/pages/StoreTest'
 /**
  * @Description:App页面
  */

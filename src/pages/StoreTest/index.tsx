@@ -1,6 +1,7 @@
 import React from 'react'
-import { useAppSelector, useAppDispatch } from '@/store'
-import { increment, incrementByAmount, getMovieData } from '@/store/modules/testSlice'
+
+import { useAppDispatch, useAppSelector } from '@/store'
+import { getMovieData, increment, incrementByAmount } from '@/store/modules/testSlice'
 /**
  * @Description:Store测试
  */

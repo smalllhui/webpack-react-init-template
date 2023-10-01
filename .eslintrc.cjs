@@ -23,7 +23,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint', 'react'],
+  plugins: ['@typescript-eslint', 'react', 'simple-import-sort'],
   settings: {
     react: {
       version: 'detect',
@@ -36,6 +36,9 @@ module.exports = {
    * "error" 或 2  ==>  规则作为一个错误（代码不能执行，界面报错）
    */
   rules: {
+    // 导入规则配置
+    'simple-import-sort/imports': 'error',
+    'simple-import-sort/exports': 'error',
     // js 详细规则：http://eslint.cn/docs/rules/
     /** @js */
     quotes: [2, 'single'], // 强制使用一致的单引号

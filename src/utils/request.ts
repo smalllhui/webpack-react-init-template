@@ -2,9 +2,9 @@
  * @Author: PanZongHui
  * @Description: axios二次封装网络请求接口
  */
-import Qs from 'qs'
-import axios from 'axios'
 import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
+import Qs from 'qs'
 
 const baseURL = '/api'
 
